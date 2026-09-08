@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { TabHeader } from "@/components/Headers";
 import { iconForObjectType, texAt, thaiDate } from "@/lib/design";
 import { publicUrl } from "@/lib/media";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -14,35 +14,29 @@ type Search = { tab?: string; album?: string };
 
 export default async function GalleryPage({ searchParams }: { searchParams: Promise<Search> }) {
   const { tab = "all", album } = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [supabase, user] = await Promise.all([createClient(), getUser()]);
   if (!user) redirect("/login");
 
-  const [{ count: patternCount }, { count: pendingCount }, { count: draftCount }] = await Promise.all([
-    supabase
-      .from("patterns")
-      .select("id", { count: "exact", head: true })
-      .eq("owner_id", user.id)
-      .in("status", ["published", "pending"]),
-    supabase
-      .from("patterns")
-      .select("id", { count: "exact", head: true })
-      .eq("owner_id", user.id)
-      .eq("status", "pending"),
-    supabase
-      .from("patterns")
-      .select("id", { count: "exact", head: true })
-      .eq("owner_id", user.id)
-      .eq("status", "draft"),
-  ]);
+  // One round trip instead of three counts: the tab labels only need the
+  // status column, which the (owner_id, status, ...) index covers.
+  const { data: statusRows } = await supabase
+    .from("patterns")
+    .select("status")
+    .eq("owner_id", user.id);
+
+  const tally = (statusRows ?? []).reduce<Record<string, number>>((acc, row) => {
+    acc[row.status] = (acc[row.status] ?? 0) + 1;
+    return acc;
+  }, {});
+  const pendingCount = tally.pending ?? 0;
+  const draftCount = tally.draft ?? 0;
+  const patternCount = (tally.published ?? 0) + pendingCount;
 
   const tabs = [
     { key: "all", label: "ทั้งหมด" },
-    { key: "patterns", label: `ลาย (${patternCount ?? 0})` },
-    { key: "pending", label: `รอตรวจสอบ (${pendingCount ?? 0})` },
-    { key: "draft", label: `Draft (${draftCount ?? 0})` },
+    { key: "patterns", label: `ลาย (${patternCount})` },
+    { key: "pending", label: `รอตรวจสอบ (${pendingCount})` },
+    { key: "draft", label: `Draft (${draftCount})` },
   ];
 
   const isAlbumTab = tab === "all" || tab === "patterns";
@@ -61,7 +55,7 @@ export default async function GalleryPage({ searchParams }: { searchParams: Prom
           ))}
         </div>
 
-        {isAlbumTab && !album ? <AlbumGrid userId={user.id} tab={tab} /> : null}
+        {isAlbumTab && !album ? <AlbumGrid userId={user.id} tab={tab} ownCount={patternCount} /> : null}
         {isAlbumTab && album ? <AlbumTiles userId={user.id} albumId={album} tab={tab} /> : null}
         {!isAlbumTab ? <StatusList userId={user.id} status={tab === "draft" ? "draft" : "pending"} /> : null}
       </div>
@@ -69,20 +63,23 @@ export default async function GalleryPage({ searchParams }: { searchParams: Prom
   );
 }
 
-async function AlbumGrid({ userId, tab }: { userId: string; tab: string }) {
+async function AlbumGrid({
+  userId,
+  tab,
+  ownCount,
+}: {
+  userId: string;
+  tab: string;
+  ownCount: number;
+}) {
   const supabase = await createClient();
 
-  const [{ data: albums }, { count: ownCount }, { data: ownCover }] = await Promise.all([
+  const [{ data: albums }, { data: ownCover }] = await Promise.all([
     supabase
       .from("albums")
       .select("id, name, kind, icon, album_items(pattern_id, patterns(photo_path))")
       .eq("owner_id", userId)
       .order("created_at"),
-    supabase
-      .from("patterns")
-      .select("id", { count: "exact", head: true })
-      .eq("owner_id", userId)
-      .in("status", ["published", "pending"]),
     supabase
       .from("patterns")
       .select("photo_path")
@@ -107,7 +104,7 @@ async function AlbumGrid({ userId, tab }: { userId: string; tab: string }) {
       name: "ลายที่ฉันบันทึกเอง",
       kind: "ฉันอัพโหลด",
       icon: "⌂",
-      count: ownCount ?? 0,
+      count: ownCount,
       cover: publicUrl("pattern-photos", ownCover?.[0]?.photo_path ?? null),
     },
     ...((albums ?? []) as AlbumRow[]).map((row) => ({

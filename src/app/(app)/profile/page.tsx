@@ -1,41 +1,31 @@
 import { redirect } from "next/navigation";
 import { TabHeader } from "@/components/Headers";
 import { publicUrl } from "@/lib/media";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { SignOutButton } from "./SignOutButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [supabase, user] = await Promise.all([createClient(), getUser()]);
   if (!user) redirect("/login");
 
-  const [{ data: profile }, { count: recorded }, { count: saved }, { count: pending }, { data: own }] =
-    await Promise.all([
-      supabase.from("profiles").select("display_name, role_title, avatar_path").eq("id", user.id).single(),
-      supabase
-        .from("patterns")
-        .select("id", { count: "exact", head: true })
-        .eq("owner_id", user.id)
-        .in("status", ["published", "pending"]),
-      supabase.from("saved_patterns").select("pattern_id", { count: "exact", head: true }).eq("user_id", user.id),
-      supabase
-        .from("patterns")
-        .select("id", { count: "exact", head: true })
-        .eq("owner_id", user.id)
-        .eq("status", "pending"),
-      supabase
-        .from("patterns")
-        .select("object_type, photo_path, created_at")
-        .eq("owner_id", user.id)
-        .in("status", ["published", "pending"])
-        .order("created_at", { ascending: false }),
-    ]);
+  // `own` already returns every published+pending row, so the "recorded" and
+  // "pending" counts come from it rather than two more round trips.
+  const [{ data: profile }, { count: saved }, { data: own }] = await Promise.all([
+    supabase.from("profiles").select("display_name, role_title, avatar_path").eq("id", user.id).single(),
+    supabase.from("saved_patterns").select("pattern_id", { count: "exact", head: true }).eq("user_id", user.id),
+    supabase
+      .from("patterns")
+      .select("object_type, photo_path, created_at, status")
+      .eq("owner_id", user.id)
+      .in("status", ["published", "pending"])
+      .order("created_at", { ascending: false }),
+  ]);
 
   const patterns = own ?? [];
+  const recorded = patterns.length;
+  const pending = patterns.filter((row) => row.status === "pending").length;
   const byType = new Map<string, number>();
   patterns.forEach((row) => {
     const key = row.object_type ?? "ไม่ระบุประเภท";
@@ -86,7 +76,7 @@ export default async function ProfilePage() {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
           {[
-            { value: recorded ?? 0, label: "ลวดลายที่บันทึก" },
+            { value: recorded, label: "ลวดลายที่บันทึก" },
             { value: saved ?? 0, label: "ลายที่กดบันทึกไว้" },
           ].map((card) => (
             <div
@@ -130,7 +120,7 @@ export default async function ProfilePage() {
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--ink-3)", marginTop: 10 }}>
             <span>รอตรวจสอบ</span>
-            <span>{pending ?? 0} รายการ</span>
+            <span>{pending} รายการ</span>
           </div>
         </div>
 

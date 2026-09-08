@@ -1,15 +1,12 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { publicUrl } from "@/lib/media";
 import { CameraScreen } from "./CameraScreen";
 
 export const dynamic = "force-dynamic";
 
 export default async function CapturePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [supabase, user] = await Promise.all([createClient(), getUser()]);
   if (!user) redirect("/login");
 
   const { data: recent } = await supabase

@@ -67,7 +67,26 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ path, url: publicUrl("line-art", path) });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "แกะลายไม่สำเร็จ";
-    return NextResponse.json({ error: message }, { status: 502 });
+    // Google's SDK throws with the raw upstream JSON in the message; surfacing
+    // that leaks quota/billing internals into the UI, so map the known cases.
+    const raw = error instanceof Error ? error.message : "";
+    console.error("[line-art]", raw);
+
+    if (raw.includes("RESOURCE_EXHAUSTED") || raw.includes("429")) {
+      return NextResponse.json(
+        { error: "โควตา AI ของโปรเจกต์หมด — เปิดการเรียกเก็บเงินใน Google AI Studio หรือลองใหม่ภายหลัง" },
+        { status: 429 },
+      );
+    }
+    if (raw.includes("API key") || raw.includes("PERMISSION_DENIED") || raw.includes("401")) {
+      return NextResponse.json({ error: "ตั้งค่า GEMINI_API_KEY ไม่ถูกต้อง" }, { status: 503 });
+    }
+    if (raw.includes("404") || raw.includes("NOT_FOUND")) {
+      return NextResponse.json(
+        { error: "ไม่พบโมเดลที่ตั้งค่าไว้ — ตรวจสอบ GEMINI_IMAGE_MODEL" },
+        { status: 503 },
+      );
+    }
+    return NextResponse.json({ error: "แกะลายไม่สำเร็จ ลองใหม่อีกครั้ง" }, { status: 502 });
   }
 }

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import type { Database } from "./types";
 import { supabaseEnv } from "./env";
 
@@ -21,20 +22,25 @@ export async function createClient() {
   });
 }
 
-/** The signed-in user's id, or null. */
-export async function currentUserId() {
+/**
+ * The signed-in user. Deduped per request — a page and its nested components
+ * share one auth round trip instead of one each.
+ */
+export const getUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user?.id ?? null;
+  return user;
+});
+
+/** The signed-in user's id, or null. */
+export async function currentUserId() {
+  return (await getUser())?.id ?? null;
 }
 
 export async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [supabase, user] = await Promise.all([createClient(), getUser()]);
   if (!user) throw new Error("ต้องเข้าสู่ระบบก่อน");
   return { supabase, user };
 }

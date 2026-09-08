@@ -120,7 +120,7 @@ export function CameraScreen({
         display: "flex",
         flexDirection: "column",
         flex: 1,
-        minHeight: "calc(100dvh - 74px)",
+        minHeight: "calc(100dvh - var(--tabbar))",
         background: PLACEHOLDER,
         overflow: "hidden",
       }}

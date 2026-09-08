@@ -1,17 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import { thaiDate } from "@/lib/design";
 import { publicUrl } from "@/lib/media";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { PatternDetail } from "./PatternDetail";
 
 export const dynamic = "force-dynamic";
 
 export default async function PatternPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [supabase, user] = await Promise.all([createClient(), getUser()]);
   if (!user) redirect("/login");
 
   const { data: pattern } = await supabase.from("patterns").select("*").eq("id", id).maybeSingle();
