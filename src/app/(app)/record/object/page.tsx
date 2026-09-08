@@ -35,15 +35,17 @@ export default function ObjectPage() {
             </span>
           </div>
 
-          <label className="field">
-            <span className="field-label">ผู้ครอบครอง / ผู้ดูแลวัตถุ</span>
-            <input
-              className="input"
-              value={objectOwnerUnknown ? "ไม่ทราบข้อมูลที่แน่ชัด" : objectOwner}
-              disabled={objectOwnerUnknown}
-              onChange={(event) => patch({ objectOwner: event.target.value })}
-              placeholder="เช่น วัดบ้านแม่สาใหม่"
-            />
+          <div className="field">
+            <label className="field">
+              <span className="field-label">ผู้ครอบครอง / ผู้ดูแลวัตถุ</span>
+              <input
+                className="input"
+                value={objectOwnerUnknown ? "ไม่ทราบข้อมูลที่แน่ชัด" : objectOwner}
+                disabled={objectOwnerUnknown}
+                onChange={(event) => patch({ objectOwner: event.target.value })}
+                placeholder="เช่น วัดบ้านแม่สาใหม่"
+              />
+            </label>
             <button
               type="button"
               onClick={() => patch({ objectOwnerUnknown: !objectOwnerUnknown })}
@@ -63,7 +65,7 @@ export default function ObjectPage() {
               </span>
               <span style={{ fontSize: 10.5, color: "var(--ink)" }}>ไม่ทราบข้อมูลที่แน่ชัด</span>
             </button>
-          </label>
+          </div>
 
           <label className="field">
             <span className="field-label">ใช้ในโอกาสใด (ไม่บังคับตอบ)</span>

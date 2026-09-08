@@ -106,6 +106,8 @@ export function ExploreControls() {
                     borderRadius: 9,
                     boxShadow: "0 8px 24px rgba(16,16,14,.16)",
                     padding: 6,
+                    maxHeight: 260,
+                    overflowY: "auto",
                   }}
                 >
                   <button

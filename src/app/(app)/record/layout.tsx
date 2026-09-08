@@ -12,11 +12,12 @@ export default function RecordLayout({ children }: { children: React.ReactNode }
   const router = useRouter();
   const hydrated = useWizardHydrated();
   const photoPath = useWizard((state) => state.photoPath);
+  const finished = useWizard((state) => state.finished);
   const step = stepFromPathname(pathname);
 
   useEffect(() => {
-    if (hydrated && !photoPath) router.replace("/capture");
-  }, [hydrated, photoPath, router]);
+    if (hydrated && !photoPath && !finished) router.replace("/capture");
+  }, [hydrated, photoPath, finished, router]);
 
   return (
     <>

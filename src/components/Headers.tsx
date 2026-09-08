@@ -12,7 +12,7 @@ const MENU_LINKS = [
   { href: "/profile", label: "โปรไฟล์" },
 ];
 
-export function TabHeader({ title }: { title: string }) {
+export function TabHeader({ title, isAdmin }: { title: string; isAdmin?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLSpanElement>(null);
@@ -38,7 +38,7 @@ export function TabHeader({ title }: { title: string }) {
 
         {open ? (
           <span className="menu-pop">
-            {MENU_LINKS.map((link) => (
+            {(isAdmin ? [...MENU_LINKS, { href: "/admin", label: "ตรวจสอบลวดลาย" }] : MENU_LINKS).map((link) => (
               <Link key={link.href} href={link.href} className="menu-item" onClick={() => setOpen(false)}>
                 {link.label}
               </Link>

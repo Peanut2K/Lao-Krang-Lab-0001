@@ -6,9 +6,13 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { EMPTY_DRAFT, type PatternDraft } from "@/lib/pattern-draft";
 
 type WizardActions = {
+  /** True once a record has been filed, so the flow guard stops redirecting. */
+  finished: boolean;
   patch: (values: Partial<PatternDraft>) => void;
   startCapture: (photo: { path: string; url: string }) => void;
   reset: () => void;
+  /** Clear the filed record but leave the flow guard alone until we navigate away. */
+  finish: () => void;
   toggleUpdateField: (label: string) => void;
 };
 
@@ -16,9 +20,12 @@ export const useWizard = create<PatternDraft & WizardActions>()(
   persist(
     (set) => ({
       ...EMPTY_DRAFT,
+      finished: false,
       patch: (values) => set(values),
-      startCapture: (photo) => set({ ...EMPTY_DRAFT, photoPath: photo.path, photoUrl: photo.url }),
-      reset: () => set({ ...EMPTY_DRAFT }),
+      startCapture: (photo) =>
+        set({ ...EMPTY_DRAFT, finished: false, photoPath: photo.path, photoUrl: photo.url }),
+      reset: () => set({ ...EMPTY_DRAFT, finished: false }),
+      finish: () => set({ ...EMPTY_DRAFT, finished: true }),
       toggleUpdateField: (label) =>
         set((state) => ({
           updateFields: state.updateFields.includes(label)

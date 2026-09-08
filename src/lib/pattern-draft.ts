@@ -74,9 +74,9 @@ export const EMPTY_DRAFT: PatternDraft = {
   sourceType: "สถาปัตยกรรม",
   sourceTypeOther: "",
 
-  province: "เชียงใหม่",
-  district: "แม่ริม",
-  community: "บ้านแม่สาใหม่",
+  province: "",
+  district: "",
+  community: "",
   latitude: null,
   longitude: null,
   locationMode: "",
@@ -124,5 +124,11 @@ export function objectTypeOf(draft: Pick<PatternDraft, "sourceType" | "sourceTyp
 }
 
 export function placeLine(draft: Pick<PatternDraft, "community" | "district" | "province">) {
-  return `${draft.community} อ.${draft.district} จ.${draft.province}`;
+  // Skip the parts that are blank, so an unfilled place reads "—" instead of "อ. จ.".
+  const parts = [
+    draft.community,
+    draft.district && `อ.${draft.district}`,
+    draft.province && `จ.${draft.province}`,
+  ].filter(Boolean);
+  return parts.length ? parts.join(" ") : "—";
 }

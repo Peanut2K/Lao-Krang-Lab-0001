@@ -105,9 +105,13 @@ export function InformantForm({ userId, userName }: { userId: string; userName: 
             <input
               className="input"
               value={shownName}
-              onChange={(event) => patch({ informantName: event.target.value, informantIsSelf: false })}
+              disabled={informantIsSelf}
+              onChange={(event) => patch({ informantName: event.target.value })}
               placeholder="เช่น นางคำแก้ว อินตา"
             />
+            {informantIsSelf ? (
+              <span className="field-hint">ใช้ชื่อบัญชีของคุณ — เอาเครื่องหมายถูกด้านล่างออกเพื่อกรอกชื่อคนอื่น</span>
+            ) : null}
           </label>
 
           <button

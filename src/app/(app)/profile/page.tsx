@@ -13,7 +13,7 @@ export default async function ProfilePage() {
   // `own` already returns every published+pending row, so the "recorded" and
   // "pending" counts come from it rather than two more round trips.
   const [{ data: profile }, { count: saved }, { data: own }] = await Promise.all([
-    supabase.from("profiles").select("display_name, role_title, avatar_path").eq("id", user.id).single(),
+    supabase.from("profiles").select("display_name, role_title, avatar_path, is_admin").eq("id", user.id).single(),
     supabase.from("saved_patterns").select("pattern_id", { count: "exact", head: true }).eq("user_id", user.id),
     supabase
       .from("patterns")
@@ -38,7 +38,7 @@ export default async function ProfilePage() {
 
   return (
     <>
-      <TabHeader title="โปรไฟล์" />
+      <TabHeader title="โปรไฟล์" isAdmin={profile?.is_admin} />
       <div className="fade-in" style={{ padding: "4px 16px 86px" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
           <div style={{ flex: 1, paddingTop: 6 }}>

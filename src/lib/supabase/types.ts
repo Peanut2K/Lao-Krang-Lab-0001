@@ -9,6 +9,7 @@ export type Profile = {
   display_name: string;
   role_title: string;
   avatar_path: string | null;
+  is_admin: boolean;
   created_at: string;
 };
 
@@ -94,7 +95,13 @@ type Table<Row, Insert = Row, Update = Partial<Row>> = {
 export type Database = {
   public: {
     Tables: {
-      profiles: Table<Profile, Omit<Profile, "created_at" | "role_title"> & { role_title?: string }>;
+      profiles: Table<
+        Profile,
+        Omit<Profile, "created_at" | "role_title" | "is_admin"> & {
+          role_title?: string;
+          is_admin?: boolean;
+        }
+      >;
       patterns: Table<Pattern, PatternInsert>;
       albums: Table<Album, Omit<Album, "id" | "created_at"> & { id?: string }>;
       album_items: Table<AlbumItem, Omit<AlbumItem, "added_at">>;

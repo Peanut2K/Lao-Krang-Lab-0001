@@ -80,6 +80,10 @@ export default function ConfirmPage() {
           ? `ส่งข้อมูลอัพเดตเข้าลาย “${updateTargetName ?? ""}” แล้ว · รอตรวจสอบ`
           : "บันทึกเป็นรายการใหม่แล้ว · สถานะรอตรวจสอบ",
       );
+      // The record is filed, so drop the draft — otherwise a later "บันทึกฉบับร่าง"
+      // writes back over the pattern just submitted. finish() also marks the flow
+      // done so the record layout does not bounce to /capture mid-navigation.
+      useWizard.getState().finish();
       router.push("/gallery");
     } catch (error) {
       flash(error instanceof Error ? error.message : "บันทึกไม่สำเร็จ");

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { TabHeader } from "@/components/Headers";
 import { iconForObjectType, texAt, thaiDate } from "@/lib/design";
 import { publicUrl } from "@/lib/media";
-import { createClient, getUser } from "@/lib/supabase/server";
+import { createClient, getUser, isAdmin } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +16,7 @@ export default async function GalleryPage({ searchParams }: { searchParams: Prom
   const { tab = "all", album } = await searchParams;
   const [supabase, user] = await Promise.all([createClient(), getUser()]);
   if (!user) redirect("/login");
+  const admin = await isAdmin();
 
   // One round trip instead of three counts: the tab labels only need the
   // status column, which the (owner_id, status, ...) index covers.
@@ -43,7 +44,7 @@ export default async function GalleryPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <TabHeader title="คลังของฉัน" />
+      <TabHeader title="คลังของฉัน" isAdmin={admin} />
       <div className="fade-in pad-flush" style={{ paddingBottom: 86 }}>
         <div className="tabs">
           {tabs.map((entry) => (

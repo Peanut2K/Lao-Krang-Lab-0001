@@ -173,8 +173,3 @@ export async function saveToAlbumsAction(
   revalidatePath(`/pattern/${patternId}`);
   return { albumCount: targets.length };
 }
-
-export async function signOutAction() {
-  const { supabase } = await requireUser();
-  await supabase.auth.signOut();
-}
