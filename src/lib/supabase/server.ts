@@ -1,0 +1,40 @@
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import type { Database } from "./types";
+import { supabaseEnv } from "./env";
+
+export async function createClient() {
+  const cookieStore = await cookies();
+  const { url, anonKey } = supabaseEnv();
+
+  return createServerClient<Database>(url, anonKey, {
+    cookies: {
+      getAll: () => cookieStore.getAll(),
+      setAll: (toSet) => {
+        try {
+          toSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+        } catch {
+          // Called from a Server Component; the proxy refreshes the session instead.
+        }
+      },
+    },
+  });
+}
+
+/** The signed-in user's id, or null. */
+export async function currentUserId() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
+
+export async function requireUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("ต้องเข้าสู่ระบบก่อน");
+  return { supabase, user };
+}
