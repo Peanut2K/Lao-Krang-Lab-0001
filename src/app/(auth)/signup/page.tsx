@@ -10,12 +10,18 @@ export default function SignupPage() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
-  const [checkEmail, setCheckEmail] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  const mismatch = confirm.length > 0 && confirm !== password;
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (password !== confirm) {
+      setError("รหัสผ่านทั้งสองช่องไม่ตรงกัน");
+      return;
+    }
     setBusy(true);
     setError("");
     const supabase = createClient();
@@ -29,27 +35,21 @@ export default function SignupPage() {
       setBusy(false);
       return;
     }
+    // With email confirmation switched off in Supabase, signUp already returns a
+    // session. If the project still has it on, sign in with the same credentials
+    // so the person lands in the app instead of waiting on an inbox.
     if (!data.session) {
-      setCheckEmail(true);
-      setBusy(false);
-      return;
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) {
+        setError(
+          "สมัครสำเร็จแล้ว แต่เข้าสู่ระบบอัตโนมัติไม่ได้ — ปิด Confirm email ใน Supabase แล้วลองเข้าสู่ระบบอีกครั้ง",
+        );
+        setBusy(false);
+        return;
+      }
     }
     router.replace("/capture");
     router.refresh();
-  }
-
-  if (checkEmail) {
-    return (
-      <div className="fade-in" style={{ padding: "64px 24px 0" }}>
-        <div style={{ fontSize: 17, fontWeight: 600, color: "var(--ink)" }}>ยืนยันอีเมลของคุณ</div>
-        <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 8, lineHeight: 1.8 }}>
-          เราส่งลิงก์ยืนยันไปที่ {email} แล้ว เปิดลิงก์ในอีเมลเพื่อเริ่มใช้งานคลังลวดลาย
-        </div>
-        <div style={{ marginTop: 20, fontSize: 11.5 }}>
-          <Link href="/login">กลับไปหน้าเข้าสู่ระบบ</Link>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -93,11 +93,34 @@ export default function SignupPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </label>
+        <label className="field">
+          <span className="field-label">ยืนยันรหัสผ่านอีกครั้ง</span>
+          <input
+            className={`input${mismatch ? " invalid" : ""}`}
+            type="password"
+            autoComplete="new-password"
+            minLength={6}
+            required
+            aria-invalid={mismatch}
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+          />
+          {mismatch ? (
+            <span className="field-hint" style={{ color: "var(--err)" }}>
+              รหัสผ่านทั้งสองช่องไม่ตรงกัน
+            </span>
+          ) : null}
+        </label>
       </div>
 
       {error ? <div style={{ marginTop: 12, fontSize: 11, color: "var(--err)" }}>{error}</div> : null}
 
-      <button type="submit" className="btn btn-primary" style={{ width: "100%", marginTop: 22 }} disabled={busy}>
+      <button
+        type="submit"
+        className="btn btn-primary"
+        style={{ width: "100%", marginTop: 22 }}
+        disabled={busy || mismatch}
+      >
         {busy ? "กำลังสมัคร…" : "สมัครสมาชิก"}
       </button>
 
