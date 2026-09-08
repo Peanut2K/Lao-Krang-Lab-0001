@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useDismiss } from "@/components/Headers";
 import { PROVINCES, SOURCE_TYPES, SRC_TO_OBJTYPE } from "@/lib/design";
 
 const OBJECT_TYPES = Array.from(new Set(Object.values(SRC_TO_OBJTYPE)));
@@ -24,6 +25,9 @@ export function ExploreControls() {
   const params = useSearchParams();
   const [query, setQuery] = useState(params.get("q") ?? "");
   const [openFilter, setOpenFilter] = useState<string | null>(null);
+  const filterBar = useRef<HTMLDivElement>(null);
+
+  useDismiss(openFilter !== null, () => setOpenFilter(null), filterBar);
 
   function apply(changes: Record<string, string | null>) {
     const next = new URLSearchParams(params.toString());
@@ -35,6 +39,7 @@ export function ExploreControls() {
   }
 
   const activeTab = params.get("tab") ?? "all";
+  const hasFilters = FILTERS.some((filter) => params.get(filter.key)) || Boolean(params.get("q"));
 
   return (
     <>
@@ -65,7 +70,7 @@ export function ExploreControls() {
         </button>
       </form>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 10, position: "relative" }}>
+      <div ref={filterBar} style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 10, position: "relative" }}>
         {FILTERS.map((filter) => {
           const value = params.get(filter.key);
           return (
@@ -131,7 +136,21 @@ export function ExploreControls() {
             </div>
           );
         })}
-        <span style={{ marginLeft: "auto", fontSize: 13, color: "#4A4A42" }}>⚙</span>
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label="ล้างตัวกรองทั้งหมด"
+          title="ล้างตัวกรองทั้งหมด"
+          disabled={!hasFilters}
+          style={{ marginLeft: "auto", fontSize: 13, color: hasFilters ? "var(--green)" : "#4A4A42" }}
+          onClick={() => {
+            setOpenFilter(null);
+            setQuery("");
+            apply({ source: null, province: null, object: null, q: null });
+          }}
+        >
+          ⌫
+        </button>
       </div>
 
       <div className="tabs" style={{ padding: "12px 0 8px", marginTop: 6 }}>

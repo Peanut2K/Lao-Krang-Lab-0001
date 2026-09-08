@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 export function Sheet({
   title,
   description,
@@ -11,6 +13,20 @@ export function Sheet({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  // Escape closes the sheet, and the page behind it stays put while it is open.
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previous;
+    };
+  }, [onClose]);
+
   return (
     <div className="sheet-backdrop" role="dialog" aria-modal="true" aria-label={title}>
       <button type="button" className="dismiss" aria-label="ปิด" onClick={onClose} />

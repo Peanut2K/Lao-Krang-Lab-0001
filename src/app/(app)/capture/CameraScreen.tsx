@@ -27,6 +27,8 @@ export function CameraScreen({
   const [live, setLive] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [torch, setTorch] = useState(false);
+  const [torchable, setTorchable] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,9 +49,16 @@ export function CameraScreen({
           videoRef.current.srcObject = stream;
           await videoRef.current.play().catch(() => {});
         }
+        // Only the rear camera on a phone usually has a lamp; ask the track.
+        const capabilities = stream.getVideoTracks()[0]?.getCapabilities?.() as
+          | (MediaTrackCapabilities & { torch?: boolean })
+          | undefined;
+        setTorchable(Boolean(capabilities?.torch));
+        setTorch(false);
         setLive(true);
       } catch {
         setLive(false);
+        setTorchable(false);
       }
     }
 
@@ -60,6 +69,19 @@ export function CameraScreen({
       streamRef.current = null;
     };
   }, [facing]);
+
+  async function toggleTorch() {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track) return;
+    const next = !torch;
+    try {
+      // ponytail: `torch` is not in the standard constraint type yet.
+      await track.applyConstraints({ advanced: [{ torch: next }] } as unknown as MediaTrackConstraints);
+      setTorch(next);
+    } catch {
+      flash("กล้องนี้เปิดแฟลชไม่ได้");
+    }
+  }
 
   const goVerify = useCallback(
     (photo: { path: string; url: string }) => {
@@ -182,8 +204,16 @@ export function CameraScreen({
           textShadow: "0 1px 4px rgba(0,0,0,.5)",
         }}
       >
-        <span style={{ fontSize: 17, lineHeight: 1 }}>☰</span>
+        <button
+          type="button"
+          aria-label="ไปที่คลังของฉัน"
+          onClick={() => router.push("/gallery")}
+          style={{ ...camIcon, fontSize: 17 }}
+        >
+          ☰
+        </button>
         <span
+          aria-label="สัดส่วนภาพ 6:7"
           style={{
             fontSize: 11,
             padding: "4px 12px",
@@ -195,13 +225,32 @@ export function CameraScreen({
         >
           6:7
         </span>
-        <span style={{ fontSize: 15, lineHeight: 1 }}>⚡</span>
+        <button
+          type="button"
+          aria-label={torch ? "ปิดแฟลช" : "เปิดแฟลช"}
+          aria-pressed={torch}
+          title={torchable ? "แฟลช" : "กล้องนี้ไม่มีแฟลช"}
+          disabled={!torchable}
+          onClick={toggleTorch}
+          style={{
+            ...camIcon,
+            fontSize: 15,
+            opacity: torchable ? 1 : 0.4,
+            color: torch ? "var(--gold)" : "#FBF9F3",
+            cursor: torchable ? "pointer" : "default",
+          }}
+        >
+          ⚡
+        </button>
       </div>
 
       <div style={{ flex: 1, minHeight: 120 }} />
 
       <div style={{ position: "relative", display: "flex", justifyContent: "center", padding: "0 0 14px", flex: "none" }}>
-        <span
+        <button
+          type="button"
+          aria-label="ภาพที่บันทึกล่าสุด"
+          onClick={() => setUploadOpen(true)}
           style={{
             display: "flex",
             alignItems: "center",
@@ -212,11 +261,21 @@ export function CameraScreen({
             backdropFilter: "blur(4px)",
             padding: "6px 13px",
             borderRadius: 999,
+            border: "none",
+            cursor: "pointer",
           }}
         >
-          <span style={{ width: 13, height: 13, borderRadius: 3, background: "var(--gold)", display: "inline-block" }} />
+          <span
+            style={{
+              width: 13,
+              height: 13,
+              borderRadius: 3,
+              display: "inline-block",
+              background: recentPhotos[0]?.url ? `url(${recentPhotos[0].url}) center/cover` : "var(--gold)",
+            }}
+          />
           History ⌄
-        </span>
+        </button>
       </div>
 
       <div
@@ -316,3 +375,13 @@ export function CameraScreen({
     </div>
   );
 }
+
+const camIcon: React.CSSProperties = {
+  border: "none",
+  background: "transparent",
+  color: "#FBF9F3",
+  lineHeight: 1,
+  padding: 4,
+  cursor: "pointer",
+  textShadow: "inherit",
+};

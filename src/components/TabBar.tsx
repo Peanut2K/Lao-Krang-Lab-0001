@@ -18,11 +18,9 @@ export function TabBar() {
       {TABS.map((tab) => {
         const on = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
         return (
-          <Link key={tab.href} href={tab.href} style={{ textDecoration: "none" }}>
-            <button data-on={on} type="button" style={{ width: "100%" }}>
-              <span className="glyph" style={{ borderRadius: tab.radius }} />
-              <span className="label">{tab.label}</span>
-            </button>
+          <Link key={tab.href} href={tab.href} data-on={on} aria-current={on ? "page" : undefined}>
+            <span className="glyph" style={{ borderRadius: tab.radius }} />
+            <span className="label">{tab.label}</span>
           </Link>
         );
       })}

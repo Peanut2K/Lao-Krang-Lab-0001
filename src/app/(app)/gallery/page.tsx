@@ -47,10 +47,14 @@ export default async function GalleryPage({ searchParams }: { searchParams: Prom
       <div className="fade-in pad-flush" style={{ paddingBottom: 86 }}>
         <div className="tabs">
           {tabs.map((entry) => (
-            <Link key={entry.key} href={`/gallery?tab=${entry.key}`} style={{ textDecoration: "none" }}>
-              <button type="button" className="tab-btn" data-on={tab === entry.key}>
-                {entry.label}
-              </button>
+            <Link
+              key={entry.key}
+              href={`/gallery?tab=${entry.key}`}
+              className="tab-btn"
+              data-on={tab === entry.key}
+              aria-current={tab === entry.key ? "page" : undefined}
+            >
+              {entry.label}
             </Link>
           ))}
         </div>
