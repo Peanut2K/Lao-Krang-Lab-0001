@@ -28,10 +28,16 @@ export async function createClient() {
  */
 export const getUser = cache(async () => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  // getUser() calls GET /auth/v1/user on every render (~120ms). getClaims()
+  // verifies the JWT signature locally against the project's ES256 JWKS, which
+  // is fetched once and cached, so this costs ~1ms after the first call.
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) return null;
+  return {
+    id: claims.sub,
+    email: typeof claims.email === "string" ? claims.email : undefined,
+  };
 });
 
 /** The signed-in user's id, or null. */
@@ -47,9 +53,8 @@ export async function requireUser() {
 
 /** The signed-in user's profile row, deduped per request. */
 export const getProfile = cache(async () => {
-  const user = await getUser();
+  const [supabase, user] = await Promise.all([createClient(), getUser()]);
   if (!user) return null;
-  const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
     .select("id, display_name, role_title, avatar_path, is_admin, created_at")

@@ -11,17 +11,21 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const [supabase, user] = await Promise.all([createClient(), getUser()]);
   if (!user) redirect("/login");
-  if (!(await isAdmin())) redirect("/capture");
 
   // The RLS policy added in 0003 lets a reviewer read every pattern, so this
-  // returns other people's pending records too.
-  const { data } = await supabase
-    .from("patterns")
-    .select(
-      "id, name, description, province, district, community, object_name, object_type, source_type, photo_path, line_art_path, license, owner_id, created_at",
-    )
-    .eq("status", "pending")
-    .order("created_at");
+  // returns other people's pending records too — and a non-reviewer gets an
+  // empty list from RLS anyway, so the check can run alongside the query.
+  const [admin, { data }] = await Promise.all([
+    isAdmin(),
+    supabase
+      .from("patterns")
+      .select(
+        "id, name, description, province, district, community, object_name, object_type, source_type, photo_path, line_art_path, license, owner_id, created_at",
+      )
+      .eq("status", "pending")
+      .order("created_at"),
+  ]);
+  if (!admin) redirect("/capture");
 
   const rows = data ?? [];
 

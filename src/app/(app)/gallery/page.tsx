@@ -16,14 +16,14 @@ export default async function GalleryPage({ searchParams }: { searchParams: Prom
   const { tab = "all", album } = await searchParams;
   const [supabase, user] = await Promise.all([createClient(), getUser()]);
   if (!user) redirect("/login");
-  const admin = await isAdmin();
 
   // One round trip instead of three counts: the tab labels only need the
-  // status column, which the (owner_id, status, ...) index covers.
-  const { data: statusRows } = await supabase
-    .from("patterns")
-    .select("status")
-    .eq("owner_id", user.id);
+  // status column, which the (owner_id, status, ...) index covers. The admin
+  // check is independent, so it shares the wait instead of queueing behind it.
+  const [{ data: statusRows }, admin] = await Promise.all([
+    supabase.from("patterns").select("status").eq("owner_id", user.id),
+    isAdmin(),
+  ]);
 
   const tally = (statusRows ?? []).reduce<Record<string, number>>((acc, row) => {
     acc[row.status] = (acc[row.status] ?? 0) + 1;

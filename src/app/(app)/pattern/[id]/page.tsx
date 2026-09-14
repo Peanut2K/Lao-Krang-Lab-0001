@@ -11,11 +11,10 @@ export default async function PatternPage({ params }: { params: Promise<{ id: st
   const [supabase, user] = await Promise.all([createClient(), getUser()]);
   if (!user) redirect("/login");
 
-  const { data: pattern } = await supabase.from("patterns").select("*").eq("id", id).maybeSingle();
-  if (!pattern) notFound();
-
-  const [{ data: owner }, { data: saved }, { data: albums }] = await Promise.all([
-    supabase.from("profiles").select("display_name").eq("id", pattern.owner_id).maybeSingle(),
+  // Only `owner` depends on the pattern row; saved/albums key off the viewer, so
+  // they start now instead of queueing behind the pattern fetch.
+  const [{ data: pattern }, { data: saved }, { data: albums }] = await Promise.all([
+    supabase.from("patterns").select("*").eq("id", id).maybeSingle(),
     supabase
       .from("saved_patterns")
       .select("pattern_id")
@@ -28,6 +27,13 @@ export default async function PatternPage({ params }: { params: Promise<{ id: st
       .eq("owner_id", user.id)
       .order("created_at"),
   ]);
+  if (!pattern) notFound();
+
+  const { data: owner } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", pattern.owner_id)
+    .maybeSingle();
 
   let portraitUrl: string | null = null;
   if (pattern.informant_portrait_path) {

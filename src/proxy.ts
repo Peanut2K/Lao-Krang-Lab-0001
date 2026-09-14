@@ -27,9 +27,10 @@ export async function proxy(request: NextRequest) {
   // /auth/* never redirects either way, so skip the auth round trip there.
   if (path === "/auth" || path.startsWith("/auth/")) return response;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Runs on every navigation, so verify the JWT locally (~1ms) instead of
+  // calling GET /auth/v1/user (~120ms) before each page even starts rendering.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims?.sub ? { id: claimsData.claims.sub } : null;
 
   if (!user && !isPublic) {
     const redirect = request.nextUrl.clone();
