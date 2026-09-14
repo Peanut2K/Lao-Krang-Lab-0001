@@ -84,8 +84,14 @@ export function NotificationToggle() {
         return;
       }
 
+      // Inlined at compile time, so a server started before the key was added
+      // to .env serves a bundle without it — the fix is a restart, not a retry.
       const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!key) throw new Error("ยังไม่ได้ตั้งค่า VAPID key สำหรับการแจ้งเตือน");
+      if (!key) {
+        throw new Error(
+          "ยังไม่พบ VAPID key ในหน้าเว็บ — ถ้าเพิ่งเพิ่มลง .env ให้รีสตาร์ท dev server แล้วลองใหม่",
+        );
+      }
 
       const registration = await navigator.serviceWorker.ready;
       const created = await registration.pushManager.subscribe({

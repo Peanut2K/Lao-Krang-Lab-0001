@@ -15,11 +15,12 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Registered via `new URL(...)`, so Next serves the worker from its own
-        // hashed static path rather than /sw.js. Registration already passes
-        // updateViaCache:"none"; this keeps an intermediary from pinning it too.
+        // Registered via `new URL(...)`, so Next serves the worker from
+        // /_next/static/service-worker/. A worker may only claim a scope at or
+        // below its own path, which would limit it to that folder and never see
+        // a push; this header is what lets it take the root scope it needs.
         source: "/_next/static/service-worker/:file*",
-        headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
+        headers: [{ key: "Service-Worker-Allowed", value: "/" }],
       },
     ];
   },

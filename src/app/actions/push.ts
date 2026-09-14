@@ -49,7 +49,11 @@ export async function unsubscribeFromReviewNotifications(endpoint: string) {
 /** "แจ้งเตือนเปิดแล้ว" — proves to the reviewer that it works, on their device. */
 export async function sendTestNotification() {
   const { supabase, user } = await requireAdmin();
-  if (!configure()) throw new Error("ยังไม่ได้ตั้งค่า VAPID key สำหรับการแจ้งเตือน");
+  if (!configure()) {
+    throw new Error(
+      "เซิร์ฟเวอร์ยังไม่มี VAPID key — ตรวจ .env แล้วรีสตาร์ทเซิร์ฟเวอร์",
+    );
+  }
 
   const { data } = await supabase
     .from("push_subscriptions")
