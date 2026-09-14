@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { BackIcon, MenuIcon, SearchIcon } from "./Icons";
 
 const MENU_LINKS = [
   { href: "/capture", label: "บันทึกลายใหม่" },
@@ -24,7 +25,7 @@ export function TabHeader({ title, isAdmin }: { title: string; isAdmin?: boolean
       <span className="title">{title}</span>
       <span className="actions" ref={wrap}>
         <button type="button" className="icon-btn" aria-label="ค้นหาลวดลาย" onClick={() => router.push("/explore")}>
-          🔍
+          <SearchIcon />
         </button>
         <button
           type="button"
@@ -33,7 +34,7 @@ export function TabHeader({ title, isAdmin }: { title: string; isAdmin?: boolean
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >
-          ☰
+          <MenuIcon />
         </button>
 
         {open ? (
@@ -72,7 +73,7 @@ export function FlowHeader({ title, href }: { title: string; href?: string }) {
         aria-label="ย้อนกลับ"
         onClick={() => (href ? router.push(href) : router.back())}
       >
-        ‹
+        <BackIcon />
       </button>
       <span className="title">{title}</span>
       <span />

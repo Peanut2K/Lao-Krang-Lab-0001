@@ -274,3 +274,50 @@ export async function exportLineArt(url: string, options: LineArtOptions, format
   );
   return { blob: pdf.output("blob"), extension: "pdf" };
 }
+
+// ---------------------------------------------------------------- normalization
+
+/**
+ * Forces the AI's output to pure black-on-white before it is stored.
+ *
+ * The prompt asks for monochrome, but the model still returns coloured or
+ * grey-shaded motifs often enough that the archive cannot rely on it. Every
+ * pixel darker than the threshold becomes black and the rest white, so what
+ * lands in storage — and in the reviewer's queue — is always line art.
+ */
+export async function normalizeLineArt(dataUrl: string): Promise<Blob> {
+  const image = await loadImage(dataUrl);
+  const width = image.naturalWidth;
+  const height = image.naturalHeight;
+
+  const canvas = canvasOf(width, height);
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) throw new Error("เบราว์เซอร์ไม่รองรับการปรับแต่งลายเส้น");
+
+  // White first, so any transparency in the model's PNG lands on paper.
+  context.fillStyle = "#FFFFFF";
+  context.fillRect(0, 0, width, height);
+  context.drawImage(image, 0, 0);
+
+  const pixels = context.getImageData(0, 0, width, height);
+  const data = pixels.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const luminance = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    const ink = luminance < NORMALIZE_THRESHOLD ? 0 : 255;
+    data[i] = ink;
+    data[i + 1] = ink;
+    data[i + 2] = ink;
+    data[i + 3] = 255;
+  }
+  context.putImageData(pixels, 0, 0);
+
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+  if (!blob) throw new Error("แปลงลายเส้นเป็นขาวดำไม่สำเร็จ");
+  return blob;
+}
+
+/**
+ * Mid-high so a coloured motif the model filled in (mid-luminance green, red,
+ * gold) still resolves to ink rather than dropping out to white.
+ */
+const NORMALIZE_THRESHOLD = 170;

@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cropToDataUrl, splitDataUrl } from "@/lib/crop-image";
+import { normalizeLineArt } from "@/lib/line-art";
+import { createClient } from "@/lib/supabase/client";
+import { uploadImage } from "@/lib/upload";
 import { useWizard } from "@/state/wizard";
 
 const DOTS = [0, 1, 2, 3, 4, 5].map((index) => {
@@ -34,7 +37,19 @@ export default function AiExtractPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "แกะลายไม่สำเร็จ");
-      patch({ lineArtPath: result.path, lineArtUrl: result.url, aiSaved: false });
+
+      // The model still colours the motif in sometimes, so the output is forced
+      // to black-on-white here before it is stored — never the raw generation.
+      const mono = await normalizeLineArt(`data:${result.mimeType};base64,${result.imageBase64}`);
+
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("ต้องเข้าสู่ระบบก่อน");
+
+      const stored = await uploadImage(supabase, "line-art", user.id, mono, "png");
+      patch({ lineArtPath: stored.path, lineArtUrl: stored.url, aiSaved: false });
       router.replace("/record/ai-result");
     } catch (thrown) {
       setError(thrown instanceof Error ? thrown.message : "แกะลายไม่สำเร็จ");

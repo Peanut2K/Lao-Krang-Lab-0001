@@ -50,21 +50,6 @@ export const SRC_TO_OBJTYPE: Record<string, string> = {
   "อื่น ๆ": "อื่น ๆ",
 };
 
-export const CAT_ICON: Record<string, string> = {
-  สถาปัตยกรรม: "⌂",
-  เครื่องใช้: "⌘",
-  วัตถุพิธีกรรม: "✽",
-  เครื่องแต่งกาย: "✂",
-  เครื่องจักสาน: "⌗",
-  เครื่องประดับ: "◈",
-  ภาชนะ: "◡",
-  เครื่องดนตรี: "♪",
-  "อื่น ๆ": "✦",
-};
-
-export const iconForObjectType = (t: string | null | undefined) =>
-  (t && CAT_ICON[t]) || CAT_ICON["อื่น ๆ"];
-
 export const INFORMANT_TYPES = [
   "เจ้าของวัตถุ",
   "ช่าง / ผู้ผลิต",

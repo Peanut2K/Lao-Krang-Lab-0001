@@ -1,14 +1,25 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@/lib/supabase/server";
-import { publicUrl } from "@/lib/media";
 
 export const maxDuration = 60;
 
+/*
+ * The model reliably drifts two ways unless it is told not to: it colours the
+ * motif in (returning the photo's palette) and it "tidies" the ornament into a
+ * neater, more symmetrical design of its own. Both are wrong here — the output
+ * is a record of a real artifact, so the instructions name each drift directly.
+ * The client binarizes the result afterwards regardless; see normalizeLineArt.
+ */
 const PROMPT = [
-  "Trace the ornamental Thai pattern in this photograph as clean black line art.",
-  "Keep every motif, petal count, stem direction and spacing faithful to the photograph — this is documentation of a real cultural artifact, not a reinterpretation.",
-  "Output: pure black strokes of even weight on a plain white background, no shading, no colour, no texture, no background scenery, no added ornament, no text or watermark.",
+  "You are tracing a real cultural artifact for an archive. Reproduce the ornamental pattern in this photograph exactly as it appears.",
+  "STRICTLY MONOCHROME: output pure black (#000000) strokes on a pure white (#FFFFFF) background.",
+  "Use no colour of any kind — no green, no red, no gold, no grey fills, no shading, no gradients, no tinting.",
+  "If the photograph is colourful, ignore the colours completely and draw only the outlines of the shapes.",
+  "TRACE, DO NOT REDESIGN: follow the actual contours in the photograph line for line.",
+  "Keep the exact motif count, petal count, leaf count, stem direction, proportions, spacing and any irregularities or asymmetry exactly as photographed.",
+  "Do not straighten, do not symmetrise, do not simplify, do not stylise, do not beautify, do not complete damaged or worn areas, and do not invent any element that is not visible in the photograph.",
+  "Fill the frame with the traced pattern only: no background scenery, no border, no frame, no added ornament, no text, no caption, no watermark, no signature.",
 ].join(" ");
 
 export async function POST(request: Request) {
@@ -57,15 +68,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "AI ยังแกะลายจากภาพนี้ไม่ได้ ลองเลือกพื้นที่ใหม่" }, { status: 502 });
     }
 
-    const bytes = Buffer.from(generated.data, "base64");
-    const path = `${user.id}/${crypto.randomUUID()}.png`;
-    const { error } = await supabase.storage.from("line-art").upload(path, bytes, {
-      contentType: generated.mimeType || "image/png",
-      upsert: false,
+    // Returned rather than stored here: the client binarizes the result to pure
+    // black-on-white before uploading it, so no coloured output reaches storage.
+    return NextResponse.json({
+      imageBase64: generated.data,
+      mimeType: generated.mimeType || "image/png",
     });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-    return NextResponse.json({ path, url: publicUrl("line-art", path) });
   } catch (error) {
     // Google's SDK throws with the raw upstream JSON in the message; surfacing
     // that leaks quota/billing internals into the UI, so map the known cases.

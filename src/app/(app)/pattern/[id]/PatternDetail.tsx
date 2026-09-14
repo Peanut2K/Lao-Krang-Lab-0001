@@ -1,15 +1,14 @@
 "use client";
 
+import { BackIcon } from "@/components/Icons";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveToAlbumsAction, toggleSavedAction } from "@/app/actions/patterns";
 import { AlbumSheet, type AlbumChoice } from "@/components/AlbumSheet";
+import { ExportSheet } from "@/components/ExportSheet";
 import { useToast } from "@/components/Toast";
 import { tex, type ExportFormat, type ExportSize } from "@/lib/design";
-import { saveBlob } from "@/lib/download";
-import { exportLineArt } from "@/lib/line-art";
 import type { Pattern } from "@/lib/supabase/types";
-import { useWizard } from "@/state/wizard";
 
 const TABS = ["รายละเอียด", "ที่มา", "ลักษณะเด่น"] as const;
 
@@ -34,11 +33,11 @@ export function PatternDetail({
 }) {
   const router = useRouter();
   const { flash } = useToast();
-  const patch = useWizard((state) => state.patch);
 
   const [tab, setTab] = useState<(typeof TABS)[number]>("รายละเอียด");
   const [saved, setSaved] = useState(isSaved);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const place = [pattern.community, pattern.district && `อ.${pattern.district}`, pattern.province && `จ.${pattern.province}`]
@@ -58,7 +57,11 @@ export function PatternDetail({
     ลักษณะเด่น: [{ key: "จุดสังเกต", value: pattern.feature ?? pattern.description ?? "—" }],
   };
 
-  const chips = [pattern.source_type, ...(pattern.tags ?? [])].filter(Boolean) as string[];
+  // tags already carries object_type, which is usually the source type too — the
+  // Set keeps the chip row (and its React keys) from repeating the same word.
+  const chips = [
+    ...new Set([pattern.source_type, ...(pattern.tags ?? [])].filter(Boolean) as string[]),
+  ];
 
   async function share() {
     const url = window.location.href;
@@ -73,28 +76,12 @@ export function PatternDetail({
     }
   }
 
-  async function exportFile() {
+  function openExport() {
     if (!lineArtUrl) {
       flash("ลายนี้ยังไม่มีลายเส้นให้ส่งออก");
       return;
     }
-    try {
-      const { blob, extension } = await exportLineArt(
-        lineArtUrl,
-        {
-          weight: pattern.line_weight,
-          ink: pattern.ink_color,
-          style: pattern.line_style,
-          background: pattern.export_background,
-          size: pattern.export_size as ExportSize,
-        },
-        pattern.export_format as ExportFormat,
-      );
-      saveBlob(blob, `${pattern.name || "lai-thai"}.${extension}`);
-      flash("ส่งออกไฟล์ลวดลายแล้ว");
-    } catch {
-      flash("ส่งออกไฟล์ไม่สำเร็จ");
-    }
+    setExportOpen(true);
   }
 
   async function toggleSaved() {
@@ -135,17 +122,18 @@ export function PatternDetail({
             border: "none",
             background: "rgba(251,249,243,.2)",
             color: "var(--surface)",
-            fontSize: 15,
+            display: "grid",
+            placeItems: "center",
             cursor: "pointer",
           }}
         >
-          ‹
+          <BackIcon size={17} />
         </button>
         <div style={{ position: "absolute", right: 12, top: 12, display: "flex", gap: 8 }}>
           <button type="button" onClick={share} style={heroButton}>
             แชร์
           </button>
-          <button type="button" onClick={exportFile} style={heroButton}>
+          <button type="button" onClick={openExport} style={heroButton}>
             ส่งออก
           </button>
         </div>
@@ -265,29 +253,29 @@ export function PatternDetail({
           className="btn btn-primary"
           style={{ flex: 1, padding: 13 }}
           onClick={() => {
-            if (!lineArtUrl || !photoUrl) {
-              flash("ลายนี้ยังไม่มีลายเส้นให้นำไปใช้");
-              return;
-            }
-            patch({
-              photoPath: pattern.photo_path,
-              photoUrl,
-              lineArtPath: pattern.line_art_path,
-              lineArtUrl,
-              patternName: pattern.name ?? "",
-              lineWeight: pattern.line_weight,
-              lineStyle: pattern.line_style,
-              inkColor: pattern.ink_color,
-              exportFormat: pattern.export_format as ExportFormat,
-              exportBackground: pattern.export_background,
-              exportSize: pattern.export_size as ExportSize,
-            });
-            router.push("/record/edit-line");
+            openExport();
           }}
         >
           นำลวดลายไปใช้
         </button>
       </div>
+
+      {exportOpen && lineArtUrl ? (
+        <ExportSheet
+          url={lineArtUrl}
+          name={pattern.name ?? ""}
+          license={pattern.license}
+          defaults={{
+            weight: pattern.line_weight,
+            style: pattern.line_style,
+            ink: pattern.ink_color,
+            format: pattern.export_format as ExportFormat,
+            background: pattern.export_background,
+            size: pattern.export_size as ExportSize,
+          }}
+          onClose={() => setExportOpen(false)}
+        />
+      ) : null}
 
       {sheetOpen ? (
         <AlbumSheet

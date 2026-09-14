@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { CaptureIcon, ExploreIcon, GalleryIcon, ProfileIcon } from "./Icons";
 
 const TABS = [
-  { href: "/capture", label: "บันทึก", radius: "4px" },
-  { href: "/gallery", label: "คลังของฉัน", radius: "3px" },
-  { href: "/explore", label: "สำรวจ", radius: "50%" },
-  { href: "/profile", label: "โปรไฟล์", radius: "50%" },
+  { href: "/capture", label: "บันทึก", Icon: CaptureIcon },
+  { href: "/gallery", label: "คลังของฉัน", Icon: GalleryIcon },
+  { href: "/explore", label: "สำรวจ", Icon: ExploreIcon },
+  { href: "/profile", label: "โปรไฟล์", Icon: ProfileIcon },
 ];
 
 export function TabBar() {
@@ -15,12 +16,14 @@ export function TabBar() {
 
   return (
     <nav className="tabbar">
-      {TABS.map((tab) => {
-        const on = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+      {TABS.map(({ href, label, Icon }) => {
+        const on = pathname === href || pathname.startsWith(`${href}/`);
         return (
-          <Link key={tab.href} href={tab.href} data-on={on} aria-current={on ? "page" : undefined}>
-            <span className="glyph" style={{ borderRadius: tab.radius }} />
-            <span className="label">{tab.label}</span>
+          <Link key={href} href={href} data-on={on} aria-current={on ? "page" : undefined}>
+            <span className="glyph">
+              <Icon size={21} />
+            </span>
+            <span className="label">{label}</span>
           </Link>
         );
       })}

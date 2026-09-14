@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { WizardFooter } from "@/components/WizardFooter";
 import { useToast } from "@/components/Toast";
-import { SOURCE_TYPES, texAt } from "@/lib/design";
+import { CategoryIcon } from "@/components/Icons";
+import { SOURCE_TYPES, SRC_TO_OBJTYPE } from "@/lib/design";
 import { useWizard } from "@/state/wizard";
 
 export default function SourceTypePage() {
@@ -21,7 +22,7 @@ export default function SourceTypePage() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
-          {SOURCE_TYPES.map((label, index) => {
+          {SOURCE_TYPES.map((label) => {
             const on = sourceType === label;
             return (
               <button
@@ -44,11 +45,15 @@ export default function SourceTypePage() {
                   style={{
                     width: 34,
                     height: 34,
-                    borderRadius: index % 3 === 2 ? "50%" : 6,
-                    display: "block",
-                    background: index === 8 ? "rgba(42,42,38,.12)" : texAt(index, 25),
+                    borderRadius: 8,
+                    display: "grid",
+                    placeItems: "center",
+                    color: on ? "var(--green)" : "var(--ink-2)",
+                    background: on ? "rgba(47,81,54,.1)" : "var(--panel)",
                   }}
-                />
+                >
+                  <CategoryIcon name={SRC_TO_OBJTYPE[label]} size={20} />
+                </span>
                 <span style={{ fontSize: 9.5, lineHeight: 1.35, color: "var(--ink)", textAlign: "center" }}>
                   {label}
                 </span>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { Wordmark } from "@/components/Icons";
 import { createClient } from "@/lib/supabase/client";
 
 function LoginForm() {
@@ -30,8 +31,8 @@ function LoginForm() {
 
   return (
     <form onSubmit={submit} className="fade-in" style={{ padding: "48px 24px 0" }}>
-      <div style={{ fontSize: 21, fontWeight: 600, color: "var(--ink)" }}>คลังลวดลายไทย</div>
-      <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 6, lineHeight: 1.7 }}>
+      <Wordmark />
+      <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 14, lineHeight: 1.7, maxWidth: "34ch" }}>
         บันทึกลวดลายจากชุมชน แกะลายเส้นด้วย AI และสืบค้นจากคลังกลาง
       </div>
 

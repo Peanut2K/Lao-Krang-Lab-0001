@@ -1,5 +1,6 @@
 "use client";
 
+import { MenuIcon } from "@/components/Icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadSheet, type RecentImage } from "@/components/UploadSheet";
@@ -208,9 +209,9 @@ export function CameraScreen({
           type="button"
           aria-label="ไปที่คลังของฉัน"
           onClick={() => router.push("/gallery")}
-          style={{ ...camIcon, fontSize: 17 }}
+          style={camIcon}
         >
-          ☰
+          <MenuIcon size={19} />
         </button>
         <span
           aria-label="สัดส่วนภาพ 6:7"

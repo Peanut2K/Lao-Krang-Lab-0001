@@ -156,11 +156,60 @@ export function ReviewList({ items }: { items: ReviewItem[] }) {
           }
           onClose={() => (busy ? undefined : setConfirming(null))}
         >
-          <div className="callout" style={{ marginTop: 14 }}>
-            {confirming.item.place} · {confirming.item.object}
-            <br />
-            บันทึกโดย {confirming.item.owner}
+          {/*
+            The reviewer is about to publish this publicly or bounce it back, so
+            the sheet repeats the whole record — both images and every field —
+            rather than making them dismiss it to re-check the card behind.
+          */}
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            <span
+              style={{
+                flex: 1,
+                height: 120,
+                borderRadius: 6,
+                background: confirming.item.photoUrl
+                  ? `url(${confirming.item.photoUrl}) center/cover`
+                  : "repeating-linear-gradient(150deg,#8B7F6A 0 12px,#7E7260 12px 24px)",
+              }}
+            />
+            <span
+              style={{
+                flex: 1,
+                height: 120,
+                borderRadius: 6,
+                border: "1px solid var(--line-2)",
+                background: confirming.item.lineArtUrl
+                  ? `url(${confirming.item.lineArtUrl}) center/contain no-repeat #fff`
+                  : LINE_ART_PLACEHOLDER,
+              }}
+            />
           </div>
+
+          <dl className="review-facts">
+            {[
+              ["ชื่อลาย", confirming.item.name],
+              ["ลักษณะลวดลาย", confirming.item.description],
+              ["พื้นที่ที่พบ", confirming.item.place],
+              ["วัตถุ", confirming.item.object],
+              ["ประเภทแหล่งที่มา", confirming.item.sourceType],
+              ["สิทธิ์การใช้งาน", confirming.item.license],
+              ["ผู้บันทึก", confirming.item.owner],
+              ["ส่งเมื่อ", confirming.item.submittedAt],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <Link
+            href={`/pattern/${confirming.item.id}`}
+            className="btn-link"
+            style={{ display: "inline-block", marginTop: 12, fontSize: 11 }}
+          >
+            เปิดหน้ารายละเอียดเต็ม
+          </Link>
 
           <SheetActions
             onCancel={() => setConfirming(null)}

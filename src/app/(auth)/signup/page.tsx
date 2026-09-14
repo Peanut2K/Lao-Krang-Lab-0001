@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Logo } from "@/components/Icons";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
@@ -54,7 +55,18 @@ export default function SignupPage() {
 
   return (
     <form onSubmit={submit} className="fade-in" style={{ padding: "48px 24px 0" }}>
-      <div style={{ fontSize: 21, fontWeight: 600, color: "var(--ink)" }}>สมัครสมาชิก</div>
+      <Logo size={40} title="คลังลวดลายไทย" />
+      <div
+        style={{
+          fontFamily: "var(--font-serif)",
+          fontSize: 21,
+          fontWeight: 600,
+          color: "var(--ink)",
+          marginTop: 14,
+        }}
+      >
+        สมัครสมาชิก
+      </div>
       <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 6, lineHeight: 1.7 }}>
         ชื่อที่กรอกจะแสดงเป็นชื่อผู้บันทึกลวดลายในคลัง
       </div>

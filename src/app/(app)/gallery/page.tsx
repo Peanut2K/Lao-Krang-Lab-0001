@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { TabHeader } from "@/components/Headers";
-import { iconForObjectType, texAt, thaiDate } from "@/lib/design";
+import { CategoryIcon } from "@/components/Icons";
+import { texAt, thaiDate } from "@/lib/design";
 import { publicUrl } from "@/lib/media";
 import { createClient, getUser, isAdmin } from "@/lib/supabase/server";
 
@@ -160,12 +161,11 @@ async function AlbumGrid({
                   borderRadius: "50%",
                   background: "rgba(20,20,20,.55)",
                   color: "var(--surface)",
-                  fontSize: 10,
                   display: "grid",
                   placeItems: "center",
                 }}
               >
-                {card.icon}
+                <CategoryIcon name={card.icon} size={13} />
               </span>
               <span
                 style={{
@@ -282,12 +282,11 @@ async function AlbumTiles({ userId, albumId, tab }: { userId: string; albumId: s
                   borderRadius: "50%",
                   background: "rgba(251,249,243,.9)",
                   color: "var(--ink)",
-                  fontSize: 11,
                   display: "grid",
                   placeItems: "center",
                 }}
               >
-                {iconForObjectType(tile.objectType)}
+                <CategoryIcon name={tile.objectType} size={13} />
               </span>
               {tile.pending ? (
                 <span

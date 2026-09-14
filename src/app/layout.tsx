@@ -1,10 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_Thai } from "next/font/google";
+import { Noto_Sans_Thai, Noto_Serif_Thai } from "next/font/google";
 import "./globals.css";
 
 const notoThai = Noto_Sans_Thai({
   subsets: ["thai", "latin"],
   weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
+
+/** Reserved for the wordmark and the largest headings — see --font-serif. */
+const notoSerifThai = Noto_Serif_Thai({
+  subsets: ["thai", "latin"],
+  weight: ["500", "600"],
+  variable: "--font-serif",
   display: "swap",
 });
 
@@ -21,7 +29,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="th" className={notoThai.className}>
+    <html lang="th" className={`${notoThai.className} ${notoSerifThai.variable}`}>
       <body>{children}</body>
     </html>
   );
