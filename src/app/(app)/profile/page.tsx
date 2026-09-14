@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { TabHeader } from "@/components/Headers";
 import { publicUrl } from "@/lib/media";
 import { createClient, getUser } from "@/lib/supabase/server";
+import { NotificationToggle } from "@/components/NotificationToggle";
 import { SignOutButton } from "./SignOutButton";
 
 export const dynamic = "force-dynamic";
@@ -123,6 +124,8 @@ export default async function ProfilePage() {
             <span>{pending} รายการ</span>
           </div>
         </div>
+
+        {profile?.is_admin ? <NotificationToggle /> : null}
 
         <SignOutButton />
       </div>

@@ -19,6 +19,10 @@ const notoSerifThai = Noto_Serif_Thai({
 export const metadata: Metadata = {
   title: "คลังลวดลายไทย",
   description: "บันทึก แกะลาย และสืบค้นลวดลายไทยจากภาพถ่ายในชุมชน",
+  applicationName: "คลังลวดลายไทย",
+  // iOS ignores the manifest for home-screen launches; these drive it instead.
+  appleWebApp: { capable: true, title: "ลวดลายไทย", statusBarStyle: "default" },
+  icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
 };
 
 export const viewport: Viewport = {

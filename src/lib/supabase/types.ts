@@ -92,6 +92,14 @@ type Table<Row, Insert = Row, Update = Partial<Row>> = {
   Relationships: [];
 };
 
+export type PushSubscriptionRow = {
+  endpoint: string;
+  user_id: string;
+  p256dh: string;
+  auth: string;
+  created_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -106,6 +114,10 @@ export type Database = {
       albums: Table<Album, Omit<Album, "id" | "created_at"> & { id?: string }>;
       album_items: Table<AlbumItem, Omit<AlbumItem, "added_at">>;
       saved_patterns: Table<SavedPattern, Omit<SavedPattern, "created_at">>;
+      push_subscriptions: Table<
+        PushSubscriptionRow,
+        Omit<PushSubscriptionRow, "created_at">
+      >;
       pattern_updates: Table<
         PatternUpdateSubmission,
         Omit<PatternUpdateSubmission, "id" | "created_at" | "status"> & { status?: UpdateStatus }

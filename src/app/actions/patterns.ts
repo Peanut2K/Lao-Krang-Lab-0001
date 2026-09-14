@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/supabase/server";
+import { notifyReviewersOfSubmission } from "./push";
 import { objectTypeOf, type PatternDraft } from "@/lib/pattern-draft";
 import type { PatternStatus } from "@/lib/supabase/types";
 
@@ -65,6 +66,19 @@ export async function saveDraftAction(draft: PatternDraft) {
 }
 
 /**
+ * Tell the reviewers, without ever failing the save that triggered it. The
+ * record is already filed at this point; a dead push service must not surface
+ * as "บันทึกไม่สำเร็จ" to the contributor.
+ */
+async function pingReviewers(name: string) {
+  try {
+    await notifyReviewersOfSubmission(name);
+  } catch {
+    // Notifications are best-effort; the queue page lists the record regardless.
+  }
+}
+
+/**
  * Final save. A new record lands in "รอตรวจสอบ"; an update is filed against the
  * existing pattern and also waits for review before it is merged.
  */
@@ -83,6 +97,7 @@ export async function submitPatternAction(draft: PatternDraft) {
 
     if (draft.draftId) await supabase.from("patterns").delete().eq("id", draft.draftId);
 
+    await pingReviewers(draft.patternName.trim());
     revalidatePath("/gallery");
     revalidatePath("/profile");
     return { mode: "update" as const, id: draft.updateTargetId };
@@ -93,6 +108,7 @@ export async function submitPatternAction(draft: PatternDraft) {
   if (draft.draftId) {
     const { error } = await supabase.from("patterns").update(row).eq("id", draft.draftId);
     if (error) throw new Error(error.message);
+    await pingReviewers(draft.patternName.trim());
     revalidatePath("/gallery");
     revalidatePath("/profile");
     return { mode: "new" as const, id: draft.draftId };
@@ -100,6 +116,7 @@ export async function submitPatternAction(draft: PatternDraft) {
 
   const { data, error } = await supabase.from("patterns").insert(row).select("id").single();
   if (error) throw new Error(error.message);
+  await pingReviewers(draft.patternName.trim());
   revalidatePath("/gallery");
   revalidatePath("/profile");
   return { mode: "new" as const, id: data.id };
